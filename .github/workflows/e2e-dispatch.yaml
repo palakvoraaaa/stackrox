@@ -117,6 +117,7 @@ jobs:
             Job(name='e2e-ui-tests-gke', require_pr_label=True, is_ui_test=True),
             Job(name='e2e-ui-tests-gke-konflux', require_konflux_build=True, is_ui_test=True),
             Job(name='e2e-operator-tests-gke', require_pr_label=True),
+            Job(name='e2e-operator-tests-gke-konflux', require_konflux_build=True, require_pr_label=True),
         ]
 
         with open(os.environ['GITHUB_OUTPUT'], mode='at', encoding='utf-8') as file:
@@ -370,4 +371,15 @@ jobs:
     secrets: inherit
     concurrency:
       group: e2e-operator-tests-gke-${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+      cancel-in-progress: true
+
+  e2e-operator-tests-gke-konflux:
+    needs: [ wait-for-konflux-images, should-dispatch ]
+    uses: ./.github/workflows/e2e-operator-tests-gke-konflux.yaml
+    with:
+      tag: ${{ needs.wait-for-konflux-images.outputs.tag }}${{ needs.wait-for-konflux-images.outputs.tag_suffix }}
+      should-run: ${{ fromJSON(needs.should-dispatch.outputs.jobs).e2e-operator-tests-gke-konflux }}
+    secrets: inherit
+    concurrency:
+      group: e2e-operator-tests-gke-konflux-${{ github.workflow }}-${{ github.head_ref || github.run_id }}
       cancel-in-progress: true
